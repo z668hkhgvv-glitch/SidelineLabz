@@ -398,7 +398,7 @@
 
     <div class="form-wrap">
       <p class="form-label">Get early access</p>
-      <form id="waitlistForm" action="https://formspree.io/f/xykalpgv" method="POST">
+      <form id="waitlistForm" action="#" method="POST">
         <div class="form-row">
           <input
             id="emailInput"
@@ -447,40 +447,37 @@
 </div>
 
 <script>
-  var form    = document.getElementById('waitlistForm');
-  var btn     = document.getElementById('notifyBtn');
-  var input   = document.getElementById('emailInput');
-  var thanks  = document.getElementById('thanks');
+  var form = document.getElementById('waitlistForm');
+  var btn = document.getElementById('notifyBtn');
+  var input = document.getElementById('emailInput');
+  var thanks = document.getElementById('thanks');
   var origTxt = btn.textContent;
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
-
-    // client-side validation
     var val = input.value.trim();
-    if (!val || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) {
+    var emailRe = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
+    if (!val || !emailRe.test(val)) {
       input.focus();
       input.style.borderColor = 'rgba(255,100,100,0.6)';
       setTimeout(function(){ input.style.borderColor = ''; }, 1400);
       return;
     }
-
-    // submitting state
     btn.textContent = 'Sending…';
     btn.disabled = true;
     input.disabled = true;
 
-    // POST to Formspree
-    fetch('https://formspree.io/f/xykalpgv', {
+    fetch('https://connect.mailerlite.com/api/subscribers', {
       method: 'POST',
-      headers: { 'Accept': 'application/json',
-                 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: val })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiOTlmMzhhMWUwYmYwZmQwNDczOGM3NmYxN2M2ZTllODJlNjc0NDUyZTIxY2EwODM5OWFhMDYxYTgyOTRiNmYzZGNiYzIxNGM0MGUxOTFmOTIiLCJpYXQiOjE3ODE0NTM4MzAuNzkxNDIzLCJuYmYiOjE3ODE0NTM4MzAuNzkxNDI2LCJleHAiOjQ5MzcxMjc0MzAuNzg3MDg4LCJzdWIiOiIyNDYwNTQxIiwic2NvcGVzIjpbXX0.iNAyESH4fGoSTF9FngEN45lPGGbOlhvFSVINIxOZVGHU5lZu7uDNnIxasZ8DNCuU-3DLcG8qJlU13rwhglo240cLac8zKDxaqnXAjbXxgd1c1o7WN3bRsP9sZ5zWPV3bWzseknyaTYfRTl1-g4SsWf-XiBfBPJu5OTic6cquQOXyN5sKWWtzdI_F3-1HPpDpUaq28y929xe2Q7MqXlA7t-P3qizrsmDGgk3BQL_Iu6CCFecQZl0F4aExd4hBquJV9MIBoVejX0-Z6QriIkXp7bFALyv2p0oLlkqQhqO5-LaN7xrGV8h-MHJbIV4mChNqPPR-hwHcuO4Vk6N6WOT2xaDkSquNKGHxGzwYHJYxxt5vZdQzrrCtLB6fCoDwFTZ-0lKAEWvjkO5IxClZtZnnvzkTCrXL_4bwf8g6BaafX6_2Sc2LEHmJ4EjTJ4SNoDE4tXhOoc7nBYWQPLj-Ip0q1sDym-bcLRX1PhoJ3SUO7YXkKyqEc58V03Dcfvye5vhu8i-Zb0LP6wqTpfnulef-tRLp51IbhAb_hgremZQaFB_2M_F45ZsbFxXrojFLBcflX_O-FUjBud_tO9VyCDVLeihp3sE4_2FQjcVZndjcJioZgY9xvDWmvCw5H4wA2YKtk_pemxCCTY4VH3BkvN0H_gGxFhkqKw1tJxFOyaQPKbs'
+      },
+      body: JSON.stringify({ email: val, groups: ['190257344712542055'] })
     })
-    .then(function(res) { return res.json().then(function(data){ return {ok: res.ok, data: data}; }); })
-    .then(function(r) {
-      if (r.ok) {
-        // success
+    .then(function(res){ return res.json().then(function(d){ return {ok:res.ok, d:d}; }); })
+    .then(function(r){
+      if (r.ok || (r.d && r.d.data && r.d.data.email)) {
         btn.textContent = '✓ Done';
         btn.style.background = 'rgba(46,204,113,0.25)';
         btn.style.color = '#2ecc71';
@@ -488,7 +485,6 @@
         input.style.opacity = '0.45';
         thanks.classList.add('show');
       } else {
-        // Formspree returned an error
         btn.textContent = origTxt;
         btn.disabled = false;
         input.disabled = false;
@@ -496,8 +492,7 @@
         setTimeout(function(){ input.style.borderColor = ''; }, 2000);
       }
     })
-    .catch(function() {
-      // network error — fall back gracefully
+    .catch(function(){
       btn.textContent = origTxt;
       btn.disabled = false;
       input.disabled = false;
