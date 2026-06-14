@@ -398,19 +398,23 @@
 
     <div class="form-wrap">
       <p class="form-label">Get early access</p>
-      <div class="form-row">
-        <input
-          id="emailInput"
-          class="email-input"
-          type="email"
-          placeholder="your@email.com"
-          autocomplete="email"
-          aria-label="Email address"
-        >
-        <button class="submit-btn" id="notifyBtn" type="button">
-          Notify me &rarr;
-        </button>
-      </div>
+      <form id="waitlistForm" action="https://formspree.io/f/xykalpgv" method="POST">
+        <div class="form-row">
+          <input
+            id="emailInput"
+            class="email-input"
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            autocomplete="email"
+            aria-label="Email address"
+            required
+          >
+          <button class="submit-btn" id="notifyBtn" type="submit">
+            Notify me &rarr;
+          </button>
+        </div>
+      </form>
       <p class="thanks" id="thanks">
         ✓ &nbsp;You're on the list. We'll reach out when SnapChart launches.
       </p>
@@ -443,11 +447,16 @@
 </div>
 
 <script>
-  var btn = document.getElementById('notifyBtn');
-  var input = document.getElementById('emailInput');
-  var thanks = document.getElementById('thanks');
+  var form    = document.getElementById('waitlistForm');
+  var btn     = document.getElementById('notifyBtn');
+  var input   = document.getElementById('emailInput');
+  var thanks  = document.getElementById('thanks');
+  var origTxt = btn.textContent;
 
-  btn.addEventListener('click', function() {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // client-side validation
     var val = input.value.trim();
     if (!val || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) {
       input.focus();
@@ -455,18 +464,44 @@
       setTimeout(function(){ input.style.borderColor = ''; }, 1400);
       return;
     }
-    btn.textContent = '✓ Done';
-    btn.style.background = 'rgba(46,204,113,0.25)';
-    btn.style.color = '#2ecc71';
-    btn.style.border = '1.5px solid rgba(46,204,113,0.4)';
+
+    // submitting state
+    btn.textContent = 'Sending…';
     btn.disabled = true;
     input.disabled = true;
-    input.style.opacity = '0.45';
-    thanks.classList.add('show');
-  });
 
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') btn.click();
+    // POST to Formspree
+    fetch('https://formspree.io/f/xykalpgv', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json',
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: val })
+    })
+    .then(function(res) { return res.json().then(function(data){ return {ok: res.ok, data: data}; }); })
+    .then(function(r) {
+      if (r.ok) {
+        // success
+        btn.textContent = '✓ Done';
+        btn.style.background = 'rgba(46,204,113,0.25)';
+        btn.style.color = '#2ecc71';
+        btn.style.border = '1.5px solid rgba(46,204,113,0.4)';
+        input.style.opacity = '0.45';
+        thanks.classList.add('show');
+      } else {
+        // Formspree returned an error
+        btn.textContent = origTxt;
+        btn.disabled = false;
+        input.disabled = false;
+        input.style.borderColor = 'rgba(255,100,100,0.6)';
+        setTimeout(function(){ input.style.borderColor = ''; }, 2000);
+      }
+    })
+    .catch(function() {
+      // network error — fall back gracefully
+      btn.textContent = origTxt;
+      btn.disabled = false;
+      input.disabled = false;
+    });
   });
 </script>
 
